@@ -1,0 +1,16 @@
+---
+title: "Project - Submission1"
+author: "Rob Ross-Shannon"
+date: "2024-07-25"
+output: pdf_document
+---
+
+```{r}
+#Reading in data sets
+setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
+genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
+series_matrix <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_series_matrix.csv")
+series_matrix
+```
+
+
