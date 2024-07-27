@@ -26,8 +26,28 @@ gene_of_interest <- select(genesT, c("AAAS", "participant_id"))
 head(gene_of_interest)
 #linking gene and covariate data set
 combinedData <- inner_join(gene_of_interest, covariates, by = "participant_id")
-head(combinedData)
+combinedData
+
+#Removing any unknown values from ferritin.ng.ml dataset
+ferritin.ng.mlData <- combinedData[combinedData$ferritin.ng.ml. != " unknown",]
+ferritin.ng.mlData
+
+```
+```{r}
+hist(combinedData$AAAS, breaks = 30, col = "indianred")
 
 ```
 
+```{r}
+ggplot(ferritin.ng.mlData,aes(x = AAAS,y = ferritin.ng.ml.)) +
+  geom_point()+
+```
+
+```{r}
+ggplot(combinedData,aes(x = sex,y = AAAS,color = icu_status)) +
+  # Add box plot
+  geom_boxplot() +
+  # Change labels
+  labs(x = 'Sex',y = 'Gene Frequency',color = 'ICU Status')
+```
 
