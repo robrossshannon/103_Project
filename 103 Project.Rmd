@@ -6,25 +6,35 @@ output: pdf_document
 ---
 
 ```{r}
-#Reading in data sets
 library(dplyr)
 library(tidyverse)
+
+#Reading in data sets
 setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
 genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
 series_matrix <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_series_matrix.csv")
 series_matrix
+
 #Selecting gene of interest and transposing data to link with covariates
 rownames(genes) <- genes$X
 genes <- select(genes, -c('X'))
+
+#Transposing data set and renaming index
 genesT <- as.data.frame(t(genes))
 genesT$participant_id <- rownames(genesT)
+
+#Fixing typo in data set
 genesT$participant_id[which(genesT$participant_id=="COVID_06_.y_male_NonICU")] <- "COVID_06_:y_male_NonICU"
+
 #Selecting covariates of interest
 covariates <- series_matrix[, c("participant_id","sex", "icu_status", "hospital.free_days_post_45_day_followup")]
 head(covariates)
 head(genesT)
+
+#Selecting gene of interest
 gene_of_interest <- select(genesT, c("AAAS", "participant_id"))
 head(gene_of_interest)
+
 #linking gene and covariate data set
 combinedData <- inner_join(gene_of_interest, covariates, by = "participant_id")
 combinedData
@@ -36,7 +46,8 @@ cleanedData
 
 
 ```{r}
-project_theme <- theme(# Remove all the extra borders and grid lines
+#Establishing project theme for plots
+project_theme <- theme(
         panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), 
         plot.title = element_text(hjust = 0.5, face = "bold"),
@@ -59,15 +70,18 @@ project_theme <- theme(# Remove all the extra borders and grid lines
 
 
 ```{r}
+#Creating annotations for plot labels
 annotations <- data.frame(
   x = c(round(min(combinedData$AAAS), 2), round(mean(combinedData$AAAS), 2), round(max(combinedData$AAAS), 2)),
   y = c(4, 12, 5),
   label = c("Min:", "Mean:", "Max:"))
 
 hist(combinedData$AAAS, breaks = 30, col = "indianred")
-ggplot(combinedData,aes(x = AAAS)) + # The + is how we communicate to ggplot2 that we aren't done adding elements to the plot
-  # Add points to our scatter plot
+
+#Creating histogram
+ggplot(combinedData,aes(x = AAAS)) + 
   geom_histogram(aes(fill = ..count..), bins = 25)+
+  #Creating gradient color representation
   scale_fill_gradient("Count", low = "blue", high = "red")+
   geom_text(data = annotations, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold", color = "white")+
   labs(x = 'Gene Frequency',y = 'Gene Frequency Count', title = "Gene Frequency Histogram")+
@@ -75,12 +89,15 @@ ggplot(combinedData,aes(x = AAAS)) + # The + is how we communicate to ggplot2 th
 ```
 
 ```{r}
+#Creating
 ggplot(combinedData,aes(x = AAAS,y = hospital.free_days_post_45_day_followup, colour = AAAS)) +
   geom_point()+
+  #Creating gradient color representation
   scale_color_gradient(low = "blue", high = "red")+
   scale_x_continuous("Gene Frequency")+
   scale_y_continuous("Hospital Free Days (Post 45 day Followup)")+
   labs(title = "Gene Expression AAAS vs. Hospital Free Days (Post 45 Day Followup)")+
+  #Creating smooth trendline
   geom_smooth(aes(color=..y..), method = "loess", se = FALSE)+
   project_theme
 ```
@@ -89,7 +106,8 @@ ggplot(combinedData,aes(x = AAAS,y = hospital.free_days_post_45_day_followup, co
 
 ggplot(cleanedData,aes(x = sex,y = AAAS,fill = icu_status)) +
   # Add box plot
-  geom_boxplot() +
+  geom_boxplot(color = "white") +
+  scale_fill_manual(values = c("red", "blue"))+
   # Change labels
   labs(x = 'Sex',y = 'AAAS Gene Frequency',color = 'ICU Status', title = "Gene Frequency by Age and ICU Status")+
   scale_x_discrete(labels = c("Female", "Male"))+
