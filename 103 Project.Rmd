@@ -76,8 +76,6 @@ annotations <- data.frame(
   y = c(4, 12, 5),
   label = c("Min:", "Mean:", "Max:"))
 
-hist(combinedData$AAAS, breaks = 30, col = "indianred")
-
 #Creating histogram
 ggplot(combinedData,aes(x = AAAS)) + 
   geom_histogram(aes(fill = ..count..), bins = 25)+
@@ -107,9 +105,9 @@ ggplot(combinedData,aes(x = AAAS,y = hospital.free_days_post_45_day_followup, co
 ggplot(cleanedData,aes(x = sex,y = AAAS,fill = icu_status)) +
   # Add box plot
   geom_boxplot(color = "white") +
-  scale_fill_manual(values = c("red", "blue"))+
+  scale_fill_manual(values = c("red", "purple"))+
   # Change labels
-  labs(x = 'Sex',y = 'AAAS Gene Frequency',color = 'ICU Status', title = "Gene Frequency by Age and ICU Status")+
+  labs(x = 'Sex',y = 'AAAS Gene Frequency',fill = 'ICU Status', title = "Gene Frequency by Age and ICU Status")+
   scale_x_discrete(labels = c("Female", "Male"))+
   project_theme
 ```
