@@ -1,0 +1,68 @@
+---
+title: "103_Project_Submission2"
+author: "Rob Ross-Shannon"
+date: "2024-08-06"
+output: pdf_document
+---
+
+```{r}
+project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, cat_covariate2){
+  project_theme <- theme(
+        panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        # Define my axis
+        title = element_text(colour = "white"),
+        axis.line = element_line(colour = "white", linewidth = rel(1)),
+        axis.title = element_text(colour = "white"),
+        axis.text = element_text(color = "white"),
+        axis.ticks = element_line(colour = "white"),
+        # Set plot background
+        plot.background = element_rect(fill = "black"),
+        panel.background = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(colour = "white"),
+        legend.background = element_rect(fill = "black"),
+        legend.title = element_text(colour = "white", ),
+        # Move legend
+        legend.position = 'right')
+ 
+  #Code to create histogram
+  
+   annotations <- data.frame(
+    x = c(round(min(df_name$gene_name), 2), round(mean(df_name$gene_name), 2), round(max(df_name$gene_name), 2)),
+    y = c(4, 12, 5),
+    label = c("Min:", "Mean:", "Max:"))
+  
+  #Creating histogram
+  ggplot(df_name,aes(x = gene_name)) + 
+    geom_histogram(aes(fill = ..count..), bins = 25)+
+    #Creating gradient color representation
+    scale_fill_gradient("Count", low = "blue", high = "red")+
+    geom_text(data = annotations, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold", color = "white")+
+    labs(x = 'Gene Frequency',y = 'Gene Frequency Count', title = "Gene Frequency Histogram")+
+    project_theme
+  
+  #Code to create scatter plot
+  ggplot(df_name,aes(x = gene_name,y = cont_covariate, colour = gene_name)) +
+    geom_point()+
+    #Creating gradient color representation
+    scale_color_gradient(low = "blue", high = "red")+
+    scale_x_continuous("Gene Frequency")+
+    scale_y_continuous(paste0(cont_covariate))+
+    labs(title = paste0('Gene Expression', gene_name, 'vs.', cont_covariate))+
+    #Creating smooth trendline
+    geom_smooth(aes(color=..y..), method = "loess", se = FALSE)+
+    project_theme
+  
+  #Code to create boxplot
+  ggplot(df_name,aes(x = cat_covariate1,y = gene_name,fill = cat_covariate2)) +
+    # Add box plot
+    geom_boxplot(color = "white") +
+    scale_fill_manual(values = c("red", "purple"))+
+    # Change labels
+    labs(x = paste0(cat_covariate1),y = paste0(gene_name, 'Gene Frequency'),fill = paste0(cat_covariate2), title = paste0('Gene Frequency by', cat_covariate1, 'and', cat_covariate2))+
+    project_theme
+}
+```
+

@@ -13,7 +13,6 @@ library(tidyverse)
 setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
 genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
 series_matrix <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_series_matrix.csv")
-series_matrix
 
 #Selecting gene of interest and transposing data to link with covariates
 rownames(genes) <- genes$X
@@ -28,20 +27,15 @@ genesT$participant_id[which(genesT$participant_id=="COVID_06_.y_male_NonICU")] <
 
 #Selecting covariates of interest
 covariates <- series_matrix[, c("participant_id","sex", "icu_status", "hospital.free_days_post_45_day_followup")]
-head(covariates)
-head(genesT)
 
 #Selecting gene of interest
 gene_of_interest <- select(genesT, c("AAAS", "participant_id"))
-head(gene_of_interest)
 
 #linking gene and covariate data set
 combinedData <- inner_join(gene_of_interest, covariates, by = "participant_id")
-combinedData
 
 #Removing any unknown values from sex dataset
 cleanedData <- combinedData[combinedData$sex != " unknown",]
-cleanedData
 ```
 
 
