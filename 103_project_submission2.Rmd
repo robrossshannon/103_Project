@@ -6,6 +6,9 @@ output: pdf_document
 ---
 
 ```{r}
+library(dplyr)
+library(tidyverse)
+
 #Reading in data sets
 setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
 genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
@@ -21,7 +24,6 @@ genesT$participant_id <- rownames(genesT)
 
 #Combing the data sets into one data frame
 combinedData <- inner_join(genesT, series_matrix, by = "participant_id")
-head(combinedData)
 ```
 
 
@@ -53,7 +55,8 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
 
   #Code to create histogram
   annotations <- data.frame(
-    x = c(round(min(cleanedData[[gene_name]]), 2), round(mean(cleanedData[[gene_name]]), 2), round(max(cleanedData[[gene_name]]), 2)),
+    x = c(round(min(cleanedData[[gene_name]]), 2), round(mean(cleanedData[[gene_name]]), 2),
+          round(max(cleanedData[[gene_name]]), 2)),
     y = c(4, 12, 5),
     label = c("Min:", "Mean:", "Max:"))
 
@@ -88,8 +91,9 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
     geom_boxplot(color = "white") +
     scale_fill_manual(values = c("red", "purple"))+
     # Change labels
-    labs(x = paste(cat_covariate1),y = paste0(gene_name, ' Gene Frequency'),fill = paste(cat_covariate2),
-         title = paste0(gene_name, ' Gene Frequency by ', cat_covariate1, ' and ', cat_covariate2))+
+    labs(x = paste(cat_covariate1),y = paste0(gene_name, ' Gene Frequency'),fill = 
+           paste(cat_covariate2), title = paste0(gene_name, ' Gene Frequency by ', 
+                            cat_covariate1, ' and ', cat_covariate2))+
     project_theme
   print(boxplot)
 }
