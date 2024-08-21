@@ -1,0 +1,191 @@
+---
+title: "103_project_final_submission"
+author: "Rob Ross-Shannon"
+date: "2024-08-20"
+output: pdf_document
+---
+
+```{r}
+library(dplyr)
+#Reading in data sets
+setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
+genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
+series_matrix <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_series_matrix.csv")
+
+#Cleaning data set (row names)
+rownames(genes) <- genes$X
+genes <- select(genes, -c('X'))
+
+#Transposing data set and renaming index
+genesT <- as.data.frame(t(genes))
+genesT$participant_id <- rownames(genesT)
+
+#Fixing typo in data set
+genesT$participant_id[which(genesT$participant_id=="COVID_06_.y_male_NonICU")] <- "COVID_06_:y_male_NonICU"
+
+#Combing the data sets into one data frame
+combinedData <- inner_join(genesT, series_matrix, by = "participant_id")
+head(combinedData)
+```
+
+```{r}
+# Define Table
+table1 <- data.frame('Variable' = c('Age mean (sd)','Sex n (%)',
+                                    "Female","Male"),
+                     "Value" = c('35 (2)','','10 (25.0)','30 (75.0)'))
+
+# Print table using kable
+tab <- kable(x = table1, caption = 'Summary Table',
+             format = 'latex',booktabs = T,
+             col.names = c("Variable", "n = 40"),
+             align = c('l','r'),escape = T) %>%
+  add_indent(positions = c(3,4),level_of_indent = 1)
+tab
+
+data.frame('n' = c(table(randomData$Cat1)),
+           'perc' = c(round(table(randomData$Cat1)/1000*100,digits = 2)))
+
+median(randomData$Cont3)
+
+# Quartile values
+quantile(randomData$Cont3)
+
+# IQR (Q3 - Q1)
+IQR(randomData$Cont3)
+
+# Mean
+mean(randomData$Cont1)
+
+# Standard deviation
+sd(randomData$Cont3)
+```
+
+```{r}
+
+#Selecting covariates of interest
+covariates <- series_matrix[, c("participant_id","sex", "icu_status", "hospital.free_days_post_45_day_followup")]
+
+#Selecting gene of interest
+gene_of_interest <- select(genesT, c("AAAS", "participant_id"))
+
+#linking gene and covariate data set
+combinedData1 <- inner_join(gene_of_interest, covariates, by = "participant_id")
+head(combinedData)
+#Removing any unknown values from sex dataset
+cleanedData <- combinedData1[combinedData1$sex != " unknown",]
+```
+
+```{r}
+project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, cat_covariate2){
+  
+  #Filtering just for inputs of interest
+  cleanedData <- select(df_name, c(gene_name, cont_covariate, cat_covariate1, cat_covariate2))
+   #Creating project theme for plots
+  project_theme <- theme(
+    panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    # Define my axis
+    title = element_text(colour = "white"),
+    axis.line = element_line(colour = "white", linewidth = rel(1)),
+    axis.title = element_text(colour = "white"),
+    axis.text = element_text(color = "white"),
+    axis.ticks = element_line(colour = "white"),
+    # Set plot background
+    plot.background = element_rect(fill = "black"),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.text = element_text(colour = "white"),
+    legend.background = element_rect(fill = "black"),
+    legend.title = element_text(colour = "white", ),
+    # Move legend
+    legend.position = 'right')
+
+  #Code to create histogram
+  annotations <- data.frame(
+    x = c(round(min(cleanedData[[gene_name]]), 2), round(mean(cleanedData[[gene_name]]), 2),
+          round(max(cleanedData[[gene_name]]), 2)),
+    y = c(4, 12, 5),
+    label = c("Min:", "Mean:", "Max:"))
+
+  #Creating histogram
+  histogram <- ggplot(cleanedData,aes_string(x = gene_name)) +
+    geom_histogram(aes(fill = ..count..), bins = 25)+
+    #Creating gradient color representation
+    scale_fill_gradient("Count", low = "blue", high = "red")+
+    geom_text(data = annotations, aes(x = x, y = y, label = paste(label, x)), size = 3, 
+              fontface = "bold", color = "white")+
+    labs(x = paste0(gene_name,' Gene Frequency'),y = 'Gene Frequency Count', 
+         title = paste0(gene_name,' Gene Frequency Histogram'))+
+    project_theme
+  print(histogram)
+
+  #Code to create scatter plot
+  scatterplot <- ggplot(cleanedData,aes_string(x = gene_name,y = cont_covariate, colour = gene_name)) +
+    geom_point()+
+    #Creating gradient color representation
+    scale_color_gradient(low = "blue", high = "red")+
+    scale_x_continuous("Gene Frequency")+
+    scale_y_continuous('Hospital Free Days (Post 45 Day Followup)')+
+    labs(title = paste('Gene Expression AAAS vs. Hospital Free Days (Post 45 Day Followup)'))+
+    #Creating smooth trendline
+    geom_smooth(aes(color=..y..), method = "loess", se = FALSE)+
+    project_theme
+  print(scatterplot)
+
+  #Code to create boxplot
+  boxplot <- ggplot(cleanedData,aes_string(x = cat_covariate1,y = gene_name,fill = cat_covariate2)) +
+    # Add box plot
+    geom_boxplot(color = "white") +
+    scale_fill_manual(values = c("red", "purple"))+
+    # Change labels
+    labs(x = 'Sex',y = 'AAAS Gene Frequency' ,fill = 
+           'ICU Status', title = 'AAAS Gene Frequency by Sex and ICU Status')+
+    project_theme
+  print(boxplot)
+}
+#Creating loop to go though multiple genes
+
+project_plots(df_name = cleanedData, gene_name = 'AAAS', cont_covariate = 
+    'hospital.free_days_post_45_day_followup', cat_covariate1 = 'sex', cat_covariate2 = 'icu_status')
+```
+
+```{r}
+hmData <- select(combinedData, c(1:10, 'participant_id'))
+rownames(hmData) <- hmData$participant_id
+hmData <- hmData %>% select(-participant_id)
+hmData <- as.data.frame(t(hmData))
+hmData
+
+calculateRelAbun <- function(x) {
+total.genefreq <- apply(x,MARGIN = 2,FUN = sum)
+# Generate empty table for relative abundance
+relAbun <- as.data.frame(matrix(ncol = ncol(x),nrow = nrow(x)),
+row.names = row.names(x))
+colnames(relAbun) <- colnames(x)
+# Loop through samples
+for (sample in colnames(x)) {
+relAbun[,sample] <- x[,sample]/total.genefreq[sample]
+}
+relAbun
+}
+
+gene_relAbun <-calculateRelAbun(hmData)
+combinedData$sex
+# Define covariate for tracking bar
+annotationData <- data.frame(row.names = colnames(hmData),
+                             'Status' = combinedData$icu_status, 
+                             'Sex' = combinedData$sex)
+# Define color palette
+annotationColors <- list(Status = c(' yes' = 'aquamarine4',
+                                    ' no' = 'deepskyblue4'),
+                         Sex = c(" male" = 'royalblue4',
+                                 " female" = 'magenta4', ' unknown' = "red"))
+# Generate heatmap
+pheatmap(gene_relAbun,
+         clustering_distance_cols = 'euclidean',
+         clustering_distance_rows = 'euclidean',
+         annotation_col = annotationData,
+         annotation_colors = annotationColors)
+```
+
