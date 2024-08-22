@@ -29,35 +29,114 @@ head(combinedData)
 ```
 
 ```{r}
+cont_summary_df <- combinedData[(combinedData$age != ' :') & (combinedData$age != ' >89'),]
+cont_summary_df <- cont_summary_df[(cont_summary_df$procalcitonin.ng.ml.. != 'unknown'),]
+cont_summary_df <- select(cont_summary_df, c('hospital.free_days_post_45_day_followup', 'age', 'procalcitonin.ng.ml..', 'sex'))
+cont_summary_df$age <- as.numeric(cont_summary_df$age)
+cont_summary_df$procalcitonin.ng.ml.. <- as.numeric(cont_summary_df$procalcitonin.ng.ml..)
+cat_summary_df <- select(combinedData, c('icu_status', 'disease_status', 'sex')) 
+
+#Creating summary statistics for categorical variables
+sexdf <- data.frame('n' = c(table(combinedData$sex)),
+           'perc' = c(round(table(combinedData$sex)/length(combinedData$sex)*100,digits = 2)))
+
+icudf <- data.frame('n' = c(table(combinedData$icu_status)),
+           'perc' = c(round(table(combinedData$icu_status)/length(combinedData$icu_status)*100,digits = 2)))
+
+dsdf <- data.frame('n' = c(table(combinedData$disease_status)),
+           'perc' = c(round(table(combinedData$disease_status)/length(combinedData$disease_status)*100,digits = 2)))
+
+#Checking the distrubution of continuous variables
+#Non normally distributed
+# ggplot(data = combinedData,aes(x = hospital.free_days_post_45_day_followup)) +
+#   geom_histogram(binwidth = 5) + 
+#   labs(x = 'Continuous Variable 1',y = 'Frequency') +
+#   theme_classic()
+# combinedData$hospital.free_days_post_45_day_followup
+
+# df_filtered <- combinedData[(combinedData$age != ' :') & (combinedData$age != ' >89'),]
+# df_filtered$age <- as.numeric(df_filtered$age)
+# #Non normally distributed
+# ggplot(data = df_filtered, aes(x=age)) +
+#   geom_histogram(binwidth = 5) + 
+#   labs(x = 'Continuous Variable 1',y = 'Frequency') +
+#   theme_classic()
+
+# df_filtered <- combinedData[(combinedData$procalcitonin.ng.ml.. != 'unknown'),]
+# df_filtered$procalcitonin.ng.ml.. <- as.numeric(df_filtered$procalcitonin.ng.ml..)
+# df_filtered$procalcitonin.ng.ml..
+# #Non normally distributed
+# ggplot(data = df_filtered, aes(x=procalcitonin.ng.ml..)) +
+#   geom_histogram(binwidth = 5) + 
+#   labs(x = 'Continuous Variable 1',y = 'Frequency') +
+#   theme_classic()
+
+
+# Define a function to median (all variables are non-normally distributed)
+contSummary <- function(x) {
+  # Calculate median (IQR) if non-normally distributed
+
+    # Calculate individual values
+    myMedian <- round(median(x),2)
+    myIQR <- round(IQR(x),2)
+    # Combine values
+    paste0(myMedian,' (',myIQR,')')
+}
+
+contsummary_male <- cont_summary_df %>%
+  filter(sex == ' male') %>%
+  select(c('hospital.free_days_post_45_day_followup', 'age', 'procalcitonin.ng.ml..'))%>%
+  apply(MARGIN = 2, FUN = contSummary)
+contsummary_male <- as.data.frame(contsummary_male)
+
+contsummary_female <- cont_summary_df %>%
+  filter(sex == ' female') %>%
+  select(c('hospital.free_days_post_45_day_followup', 'age', 'procalcitonin.ng.ml..'))%>%
+  apply(MARGIN = 2, FUN = contSummary)
+contsummary_female <- as.data.frame(contsummary_female)
+
+contsummary_male
+contsummary_female
+
+catSummary <- function(x) {
+  # Calculate median (IQR) if non-normally distributed
+
+    # Calculate individual values
+    n <- table(x)
+    perc <-round(prop.table(n) *100, 2)
+    # Combine values
+    paste0(n,' (',perc,')')
+}
+
+catsummary_male <- cat_summary_df %>%
+  filter(sex == ' male') %>%
+  select(c('icu_status', 'disease_status'))%>%
+  apply(MARGIN = 2, FUN = catSummary)
+catsummary_male <- as.data.frame(catsummary_male)
+
+catsummary_female <- cat_summary_df %>%
+  filter(sex == ' female') %>%
+  select(c('icu_status', 'disease_status'))%>%
+  apply(MARGIN = 2, FUN = catSummary)
+catsummary_female <- as.data.frame(catsummary_female)
+
+catsummary_female
+catsummary_male
+
 # Define Table
-table1 <- data.frame('Variable' = c('Age mean (sd)','Sex n (%)',
-                                    "Female","Male"),
-                     "Value" = c('35 (2)','','10 (25.0)','30 (75.0)'))
-
-# Print table using kable
-tab <- kable(x = table1, caption = 'Summary Table',
-             format = 'latex',booktabs = T,
-             col.names = c("Variable", "n = 40"),
-             align = c('l','r'),escape = T) %>%
-  add_indent(positions = c(3,4),level_of_indent = 1)
-tab
-
-data.frame('n' = c(table(randomData$Cat1)),
-           'perc' = c(round(table(randomData$Cat1)/1000*100,digits = 2)))
-
-median(randomData$Cont3)
-
-# Quartile values
-quantile(randomData$Cont3)
-
-# IQR (Q3 - Q1)
-IQR(randomData$Cont3)
-
-# Mean
-mean(randomData$Cont1)
-
-# Standard deviation
-sd(randomData$Cont3)
+# table1 <- data.frame('Variable' = c('Age mean (sd)','Sex n (%)',
+#                                     "Female","Male"),
+#                      "Value" = c('35 (2)','','10 (25.0)','30 (75.0)'))
+# table1
+# 
+# 
+# # Print table using kable
+# tab <- kable(x = table1, caption = 'Summary Table',
+#              format = 'latex',booktabs = T,
+#              col.names = c("Variable", "n = 40"),
+#              align = c('l','r'),escape = T) %>%
+#   add_indent(positions = c(3,4),level_of_indent = 1)
+#tab
 ```
 
 ```{r}
@@ -115,7 +194,7 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
     scale_fill_gradient("Count", low = "blue", high = "red")+
     geom_text(data = annotations, aes(x = x, y = y, label = paste(label, x)), size = 3, 
               fontface = "bold", color = "white")+
-    labs(x = paste0(gene_name,' Gene Frequency'),y = 'Gene Frequency Count', 
+    labs(x = paste0(gene_name,' Gene Expression'),y = 'Gene Frequency Count', 
          title = paste0(gene_name,' Gene Frequency Histogram'))+
     project_theme
   print(histogram)
@@ -155,7 +234,6 @@ hmData <- select(combinedData, c(1:10, 'participant_id'))
 rownames(hmData) <- hmData$participant_id
 hmData <- hmData %>% select(-participant_id)
 hmData <- as.data.frame(t(hmData))
-hmData
 
 calculateRelAbun <- function(x) {
 total.genefreq <- apply(x,MARGIN = 2,FUN = sum)
@@ -171,10 +249,9 @@ relAbun
 }
 
 gene_relAbun <-calculateRelAbun(hmData)
-combinedData$sex
 # Define covariate for tracking bar
 annotationData <- data.frame(row.names = colnames(hmData),
-                             'Status' = combinedData$icu_status, 
+                             'ICU Status' = combinedData$icu_status, 
                              'Sex' = combinedData$sex)
 # Define color palette
 annotationColors <- list(Status = c(' yes' = 'aquamarine4',
@@ -186,6 +263,22 @@ pheatmap(gene_relAbun,
          clustering_distance_cols = 'euclidean',
          clustering_distance_rows = 'euclidean',
          annotation_col = annotationData,
-         annotation_colors = annotationColors)
+         annotation_colors = annotationColors,
+         show_colnames = FALSE)
+```
+```{r}
+# Source: Frequency table
+df <- as.data.frame(table(mpg$class))
+colnames(df) <- c("class", "freq")
+pie <- ggplot(df, aes(x = "", y=freq, fill = factor(class))) + 
+  geom_bar(width = 1, stat = "identity") +
+  theme(axis.line = element_blank(), 
+        plot.title = element_text(hjust=0.5)) + 
+  labs(fill="class", 
+       x=NULL, 
+       y=NULL, 
+       title="Pie Chart of class", 
+       caption="Source: mpg")
+
 ```
 
