@@ -7,6 +7,12 @@ output: pdf_document
 
 ```{r}
 library(dplyr)
+library(kableExtra)
+library(pheatmap)
+library(ggpubr)
+library(ggplot2)
+library(ggExtra)
+
 #Reading in data sets
 setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
 genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
@@ -35,16 +41,6 @@ cont_summary_df <- select(cont_summary_df, c('hospital.free_days_post_45_day_fol
 cont_summary_df$age <- as.numeric(cont_summary_df$age)
 cont_summary_df$procalcitonin.ng.ml.. <- as.numeric(cont_summary_df$procalcitonin.ng.ml..)
 cat_summary_df <- select(combinedData, c('icu_status', 'disease_status', 'sex')) 
-
-#Creating summary statistics for categorical variables
-sexdf <- data.frame('n' = c(table(combinedData$sex)),
-           'perc' = c(round(table(combinedData$sex)/length(combinedData$sex)*100,digits = 2)))
-
-icudf <- data.frame('n' = c(table(combinedData$icu_status)),
-           'perc' = c(round(table(combinedData$icu_status)/length(combinedData$icu_status)*100,digits = 2)))
-
-dsdf <- data.frame('n' = c(table(combinedData$disease_status)),
-           'perc' = c(round(table(combinedData$disease_status)/length(combinedData$disease_status)*100,digits = 2)))
 
 #Checking the distrubution of continuous variables
 #Non normally distributed
@@ -80,7 +76,7 @@ contSummary <- function(x) {
     myMedian <- round(median(x),2)
     myIQR <- round(IQR(x),2)
     # Combine values
-    paste0(myMedian,' (',myIQR,')')
+    paste0(myMedian,' [',myIQR,']')
 }
 
 contsummary_male <- cont_summary_df %>%
@@ -95,8 +91,14 @@ contsummary_female <- cont_summary_df %>%
   apply(MARGIN = 2, FUN = contSummary)
 contsummary_female <- as.data.frame(contsummary_female)
 
-contsummary_male
-contsummary_female
+colnames(contsummary_male) <- c('Male')
+colnames(contsummary_female) <- c('Female')
+rownames(contsummary_male) <- c('Hospital Free Days (Post 45 Day Followup) Median [IQR]', 'Age (yrs) Median [IQR]', 'Procalcitonin (ng/mL) Median [IQR]')
+rownames(contsummary_female) <- c('Hospital Free Days (Post 45 Day Followup) Median [IQR]', 'Age (yrs) Median [IQR]', 'Procalcitonin (ng/mL) Median [IQR]')
+
+contsummary_female$Male <- contsummary_male[rownames(contsummary_female), "Male"]
+
+
 
 catSummary <- function(x) {
   # Calculate median (IQR) if non-normally distributed
@@ -108,35 +110,84 @@ catSummary <- function(x) {
     paste0(n,' (',perc,')')
 }
 
-catsummary_male <- cat_summary_df %>%
+catsummary_sex <- cat_summary_df %>%
+  select(c('sex')) %>%
+  apply(MARGIN = 2, FUN = catSummary)
+catsummary_sex <- as.data.frame(t(catsummary_sex))
+
+catsummary_maleicu <- cat_summary_df %>%
   filter(sex == ' male') %>%
-  select(c('icu_status', 'disease_status'))%>%
+  select(c('icu_status'))%>%
   apply(MARGIN = 2, FUN = catSummary)
-catsummary_male <- as.data.frame(catsummary_male)
+catsummary_maleicu <- as.data.frame(catsummary_maleicu)
 
-catsummary_female <- cat_summary_df %>%
+catsummary_maledisease <- cat_summary_df %>%
+  filter(sex == ' male') %>%
+  select(c('disease_status'))%>%
+  apply(MARGIN = 2, FUN = catSummary)
+catsummary_maledisease <- as.data.frame(catsummary_maledisease)
+
+catsummary_femaleicu <- cat_summary_df %>%
   filter(sex == ' female') %>%
-  select(c('icu_status', 'disease_status'))%>%
+  select(c('icu_status'))%>%
   apply(MARGIN = 2, FUN = catSummary)
-catsummary_female <- as.data.frame(catsummary_female)
+catsummary_femaleicu <- as.data.frame(catsummary_femaleicu)
 
-catsummary_female
-catsummary_male
+catsummary_femaledisease <- cat_summary_df %>%
+  filter(sex == ' female') %>%
+  select(c('disease_status'))%>%
+  apply(MARGIN = 2, FUN = catSummary)
+catsummary_femaledisease <- as.data.frame(catsummary_femaledisease)
 
-# Define Table
-# table1 <- data.frame('Variable' = c('Age mean (sd)','Sex n (%)',
-#                                     "Female","Male"),
-#                      "Value" = c('35 (2)','','10 (25.0)','30 (75.0)'))
-# table1
-# 
-# 
-# # Print table using kable
-# tab <- kable(x = table1, caption = 'Summary Table',
-#              format = 'latex',booktabs = T,
-#              col.names = c("Variable", "n = 40"),
-#              align = c('l','r'),escape = T) %>%
-#   add_indent(positions = c(3,4),level_of_indent = 1)
-#tab
+rownames(catsummary_sex) <- c('Sex n(%)')
+rownames(catsummary_femaleicu) <- c('Yes', 'No')
+rownames(catsummary_maleicu) <- c('Yes', 'No')
+rownames(catsummary_femaledisease) <- c('COVID-19', 'Non-COVID-19')
+rownames(catsummary_maledisease) <- c('COVID-19','Non-COVID-19')
+
+colnames(catsummary_sex) <- c('Female', 'Male', 'Unknown')
+colnames(catsummary_femaleicu) <- c('Female')
+colnames(catsummary_femaledisease) <- c('Female')
+colnames(catsummary_maleicu) <- c('Male')
+colnames(catsummary_maledisease) <- c('Male')
+
+catsummary_sex <- select(catsummary_sex, c(-Unknown))
+
+catsummary_femaledisease$Male <- catsummary_maledisease[rownames(catsummary_femaledisease), "Male"]
+catsummary_femaleicu$Male <- catsummary_maleicu[rownames(catsummary_femaleicu), "Male"]
+
+
+
+summarydf <- bind_rows(catsummary_sex, catsummary_femaledisease, catsummary_femaleicu, contsummary_female)
+new_row <- data.frame(Name = "Disease Status n(%)", Male = " ", Female = " ")
+new_row1 <- data.frame(Name = "ICU Status n(%)", Male = " ", Female = " ")
+rownames(new_row) <- new_row$Name
+new_row <- select(new_row, c(-Name))
+rownames(new_row1) <- new_row1$Name
+new_row1 <- select(new_row1, c(-Name))
+
+summarydf <- rbind(
+  summarydf[1, ],         # Rows before the second position
+  new_row, 
+  summarydf[2:nrow(summarydf), ] # Rows after the second position
+)
+summarydf
+
+summarydf <- rbind(
+  summarydf[1:4, ],         # Rows before the fifth position
+  new_row1, 
+  summarydf[5:nrow(summarydf), ] # Rows after the fifth position
+)
+
+
+summarydf
+
+tab <- kable(x = summarydf, caption = 'Summary Table',
+             format = 'latex',booktabs = T,
+             col.names = c("Female", "Male"),
+             align = c('l','r'),escape = T) %>%
+  add_indent(positions = c(3,4, 6,7),level_of_indent = 1)
+tab
 ```
 
 ```{r}
@@ -155,11 +206,8 @@ cleanedData <- combinedData1[combinedData1$sex != " unknown",]
 ```
 
 ```{r}
-project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, cat_covariate2){
-  
-  #Filtering just for inputs of interest
-  cleanedData <- select(df_name, c(gene_name, cont_covariate, cat_covariate1, cat_covariate2))
    #Creating project theme for plots
+
   project_theme <- theme(
     panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -179,6 +227,11 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
     legend.title = element_text(colour = "white", ),
     # Move legend
     legend.position = 'right')
+
+project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, cat_covariate2){
+  
+  #Filtering just for inputs of interest
+  cleanedData <- select(df_name, c(gene_name, cont_covariate, cat_covariate1, cat_covariate2))
 
   #Code to create histogram
   annotations <- data.frame(
@@ -230,55 +283,73 @@ project_plots(df_name = cleanedData, gene_name = 'AAAS', cont_covariate =
 ```
 
 ```{r}
-hmData <- select(combinedData, c(1:10, 'participant_id'))
+combinedData
+genes <- c('A1BG', 'AAAS', 'AACS', 'AAGAB', 'AAMP', 'AAK1', 'AAR2', 'AARS1', 'AATF', 'AATK', 'ABAT')
+hmData <- select(combinedData, c(genes, 'participant_id'))
 rownames(hmData) <- hmData$participant_id
 hmData <- hmData %>% select(-participant_id)
 hmData <- as.data.frame(t(hmData))
 
-calculateRelAbun <- function(x) {
-total.genefreq <- apply(x,MARGIN = 2,FUN = sum)
-# Generate empty table for relative abundance
-relAbun <- as.data.frame(matrix(ncol = ncol(x),nrow = nrow(x)),
-row.names = row.names(x))
-colnames(relAbun) <- colnames(x)
-# Loop through samples
-for (sample in colnames(x)) {
-relAbun[,sample] <- x[,sample]/total.genefreq[sample]
-}
-relAbun
-}
-
-gene_relAbun <-calculateRelAbun(hmData)
 # Define covariate for tracking bar
 annotationData <- data.frame(row.names = colnames(hmData),
                              'ICU Status' = combinedData$icu_status, 
                              'Sex' = combinedData$sex)
+combinedData$s
 # Define color palette
-annotationColors <- list(Status = c(' yes' = 'aquamarine4',
-                                    ' no' = 'deepskyblue4'),
-                         Sex = c(" male" = 'royalblue4',
-                                 " female" = 'magenta4', ' unknown' = "red"))
+annotationColors <- list(ICU.Status = c(" no" = 'yellow',
+                                    " yes" = 'lightblue'),
+                         Sex = c(" male" = 'orange',
+                                 " female" = 'lightgreen', ' unknown' = "red"))
 # Generate heatmap
-pheatmap(gene_relAbun,
+pheatmap(hmData,
          clustering_distance_cols = 'euclidean',
          clustering_distance_rows = 'euclidean',
          annotation_col = annotationData,
          annotation_colors = annotationColors,
-         show_colnames = FALSE)
+         fontsize_col = 2,
+         color = colorRampPalette(c("blue", "purple", "red"))(100),
+         main = "Heatmap of Gene Expression Categorized by Sex and ICU Status")
 ```
 ```{r}
-# Source: Frequency table
-df <- as.data.frame(table(mpg$class))
-colnames(df) <- c("class", "freq")
-pie <- ggplot(df, aes(x = "", y=freq, fill = factor(class))) + 
-  geom_bar(width = 1, stat = "identity") +
-  theme(axis.line = element_blank(), 
-        plot.title = element_text(hjust=0.5)) + 
-  labs(fill="class", 
-       x=NULL, 
-       y=NULL, 
-       title="Pie Chart of class", 
-       caption="Source: mpg")
+# Grouped Scatter plot with marginal density plots
+# plot <- ggscatterhist(
+#   cleanedData, x = "AAAS", y = "hospital.free_days_post_45_day_followup",
+#   color = "icu_status", size = 3, alpha = 0.6,
+#   palette = c("red", "purple", "#FC4E07"),
+#   margin.params = list(fill = "icu_status", color = "black", size = 0.2), 
+#   xlab = 'AAAS Gene Frequency',
+#   ylab = 'Hospital Free Days (Post 45 Day Followup)', 
+#   legend.title = list(color = "ICU Status")
+#   )
+# Create the scatter plot with a trendline using ggplot2
+p <- ggplot(cleanedData, aes(x = AAAS, y = hospital.free_days_post_45_day_followup, color = icu_status)) +
+  geom_point(size = 3, alpha = 0.6) +  # Scatter plot
+  geom_smooth(method = "loess", se = FALSE, color = "black") +  # Add trendline
+  scale_color_manual(values = c("blue", "red")) +  # Custom color palette
+  labs(
+    x = 'AAAS Gene Frequency', 
+    y = 'Hospital Free Days (Post 45 Day Followup)', 
+    color = 'ICU Status', # Change legend title
+    title = "AAAS Gene Freq. vs. Hospital Free Days (by ICU Status)"
+  ) +
+  theme_minimal()+
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      hjust = 0.5,
+      vjust = 0.5
+    )
+  )+
+  theme(legend.position = "top")
 
+# Add marginal histograms or density plots using ggMarginal
+p_with_margins <- ggMarginal(
+  p, 
+  type = "density",  # Type of marginal plots ('histogram', 'density', or 'boxplot')
+  groupFill = TRUE  # Automatically group the fill by the 'color' aesthetic
+)
+
+# Display the final plot
+print(p_with_margins)
 ```
 
