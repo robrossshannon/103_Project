@@ -24,6 +24,7 @@ genesT$participant_id <- rownames(genesT)
 
 #Combing the data sets into one data frame
 combinedData <- inner_join(genesT, series_matrix, by = "participant_id")
+head(combinedData)
 ```
 
 

@@ -17,7 +17,7 @@ library(ggExtra)
 setwd("/Users/Rob Ross-Shannon/Documents/GitHub/103_Project")
 genes <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_genes.csv")
 series_matrix <- read.csv("~/Documents/GitHub/103_Project/QBS103_GSE157103_series_matrix.csv")
-
+series_matrix
 #Cleaning data set (row names)
 rownames(genes) <- genes$X
 genes <- select(genes, -c('X'))
@@ -54,7 +54,7 @@ cat_summary_df <- select(combinedData, c('icu_status', 'disease_status', 'sex'))
 # df_filtered$age <- as.numeric(df_filtered$age)
 # #Non normally distributed
 # ggplot(data = df_filtered, aes(x=age)) +
-#   geom_histogram(binwidth = 5) + 
+#   geom_histogram(binwidth = 5) +
 #   labs(x = 'Continuous Variable 1',y = 'Frequency') +
 #   theme_classic()
 
@@ -247,7 +247,7 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
     scale_fill_gradient("Count", low = "blue", high = "red")+
     geom_text(data = annotations, aes(x = x, y = y, label = paste(label, x)), size = 3, 
               fontface = "bold", color = "white")+
-    labs(x = paste0(gene_name,' Gene Expression'),y = 'Gene Frequency Count', 
+    labs(x = paste0(gene_name,' Gene Expression Frequency'),y = 'Gene Frequency Count', 
          title = paste0(gene_name,' Gene Frequency Histogram'))+
     project_theme
   print(histogram)
@@ -257,7 +257,7 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
     geom_point()+
     #Creating gradient color representation
     scale_color_gradient(low = "blue", high = "red")+
-    scale_x_continuous("Gene Frequency")+
+    scale_x_continuous("Gene Expression Frequency")+
     scale_y_continuous('Hospital Free Days (Post 45 Day Followup)')+
     labs(title = paste('Gene Expression AAAS vs. Hospital Free Days (Post 45 Day Followup)'))+
     #Creating smooth trendline
@@ -271,8 +271,8 @@ project_plots <- function(df_name, gene_name, cont_covariate, cat_covariate1, ca
     geom_boxplot(color = "white") +
     scale_fill_manual(values = c("red", "purple"))+
     # Change labels
-    labs(x = 'Sex',y = 'AAAS Gene Frequency' ,fill = 
-           'ICU Status', title = 'AAAS Gene Frequency by Sex and ICU Status')+
+    labs(x = 'Sex',y = 'AAAS Gene Expression Frequency' ,fill = 
+           'ICU Status', title = 'AAAS Expression Gene Frequency by Sex and ICU Status')+
     project_theme
   print(boxplot)
 }
@@ -294,12 +294,13 @@ hmData <- as.data.frame(t(hmData))
 annotationData <- data.frame(row.names = colnames(hmData),
                              'ICU Status' = combinedData$icu_status, 
                              'Sex' = combinedData$sex)
-combinedData$s
 # Define color palette
 annotationColors <- list(ICU.Status = c(" no" = 'yellow',
                                     " yes" = 'lightblue'),
                          Sex = c(" male" = 'orange',
                                  " female" = 'lightgreen', ' unknown' = "red"))
+colnames(annotationData) <- c("ICU Status", "Sex")
+annotationData
 # Generate heatmap
 pheatmap(hmData,
          clustering_distance_cols = 'euclidean',
